@@ -7,7 +7,7 @@ import base64
 import os
 
 # Configurar los permisos necesarios y el alcance
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
 
 def list_labels(service, user_id):
     """List all labels in the user's Gmail account."""
@@ -57,7 +57,10 @@ def get_messages(service, user_id):
 def get_message_content(service, user_id, message_id):
     try:
         message = service.users().messages().get(userId=user_id, id=message_id).execute()
+
         email = {
+            'id': message_id,
+            'thread_id': message['threadId'],
             'destinatario': '',
             'remitente': '',
             'fecha': '',
@@ -90,6 +93,13 @@ def get_message_content(service, user_id, message_id):
     except Exception as error:
         print('Ocurrió un error al obtener el contenido del mensaje: %s' % error)
 
+
+def create_message(sender, to, subject, message_text, thread_id):
+    message = MIMEText(message_text)
+    message['to'] = to
+    message['subject'] = subject
+    message['threadId'] = thread_id
+    return {'raw': base64.urlsafe_b64encode(message.as_string().encode()).decode()}
 
 
 def main():
@@ -127,13 +137,23 @@ def main():
     label_id = 'SENT'
 
 
-    # Obtener os mensajes
+    # Obtener los mensajes
     messages = get_messages(service, "me")
 
+    # Enviar una respuesta a cada mensaje
     for i in messages:
         msg_id = i['id']
         email = get_message_content(service, 'me', msg_id)
-        print(email)
+        #print(i)
+        try:
+            # Compose reply message
+            respuesta = 'Hola desde Python !'
+            reply_message = create_message('me', email['remitente'], 'Probando gmail api python !', respuesta, email['thread_id'])
+            service.users().messages().send(userId='me', body=reply_message).execute()  #
+            print('Reply sent successfully!')
+        except Exception as e:
+            print('An error occurred:', e)
+
 
 
 
