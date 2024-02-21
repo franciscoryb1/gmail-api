@@ -1,9 +1,9 @@
-import json
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 import base64
+import json
 import os
 
 # Configurar los permisos necesarios y el alcance
@@ -36,10 +36,10 @@ def list_labels(service, user_id):
 #    except Exception as error:
 #        print('An error occurred: %s' % error)
 
-def get_messages(service, user_id):
+def get_messages(service, user_id, label_id):
     """Obtener todos los mensajes de la bandeja de entrada."""
     try:
-        response = service.users().messages().list(userId=user_id).execute()
+        response = service.users().messages().list(userId=user_id, labelIds=[label_id]).execute()
         messages = []
         if 'messages' in response:
             messages.extend(response['messages'])
@@ -117,6 +117,7 @@ def main():
             print("Run the authentication process again.")
             return
 
+
     # Construir el servicio de Gmail
     service = build('gmail', 'v1', credentials=creds)
 
@@ -137,22 +138,31 @@ def main():
     label_id = 'SENT'
 
 
-    # Obtener los mensajes
-    messages = get_messages(service, "me")
 
-    # Enviar una respuesta a cada mensaje
+    # Obtener los mensajes
+    messages = get_messages(service, "me", "UNREAD")
+
     for i in messages:
         msg_id = i['id']
         email = get_message_content(service, 'me', msg_id)
-        #print(i)
-        try:
-            # Compose reply message
-            respuesta = 'Hola desde Python !'
-            reply_message = create_message('me', email['remitente'], 'Probando gmail api python !', respuesta, email['thread_id'])
-            service.users().messages().send(userId='me', body=reply_message).execute()  #
-            print('Reply sent successfully!')
-        except Exception as e:
-            print('An error occurred:', e)
+        print(email)
+        for i in email:
+            print(i, ': ', email[i])
+        #print(email['body'])
+
+    # Enviar una respuesta a cada mensaje
+    #for i in messages:
+    #    msg_id = i['id']
+    #    email = get_message_content(service, 'me', msg_id)
+    #    #print(i)
+    #    try:
+    #        # Compose reply message
+    #        respuesta = 'Hola desde Python !'
+    #        reply_message = create_message('me', email['remitente'], 'Probando gmail api python !', respuesta, email['thread_id'])
+    #        service.users().messages().send(userId='me', body=reply_message).execute()  #
+    #        print('Reply sent successfully!')
+    #    except Exception as e:
+    #        print('An error occurred:', e)
 
 
 
