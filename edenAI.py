@@ -41,7 +41,7 @@ def EDEN(prompt):
     url = "https://api.edenai.run/v2/text/chat"
     payload = {
         "providers": "openai",
-        "text": texto,
+        "text": prompt,
         "chatbot_global_action": "te voy a enviar el contenido de un correo electronico y lo tenes que categorizar en una de las siguientes categorias queja/reclamo, consultas/solicitud de información, o agradecimiento/conformidad, devolviendo UNICAMENTE la categoria correspondiente. Luego tenes que generar una respuesta acorde breve y concisa. SEPARAR LAS RESPUESTAS POR ESTA LINEA DE CARACTERES ';;;;'",
         "previous_history": [],
         "temperature": 0.0,

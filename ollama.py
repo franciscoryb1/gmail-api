@@ -36,6 +36,3 @@ def ollama(prompt):
         #print(f"El diccionario se ha guardado exitosamente !")
     else:
         print("Error:", response.status_code)
-
-
-ollama("por que el cielo es azul?")

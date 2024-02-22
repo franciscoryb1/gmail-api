@@ -86,7 +86,6 @@ def cat_resp(body):
            'response': ""}
     for category in categories:
         if category in response:
-            print(category)
             out['category'] = category
     text = response.split(";;;;")[-1].strip()
     out['response'] = text
@@ -121,42 +120,30 @@ def main():
     service = build('gmail', 'v1', credentials=creds)
 
 
-    # Obtener la lista de etiquetas
-    #labels = list_labels(service, "me")
-    #etiquetas = []
-    ## Imprimir el ID y el nombre de cada etiqueta
-    #if labels:
-    #    for label in labels:
-    #        etiquetas.append(label['id'])
-    #        #print("Label ID:", label['id'])
-    #        #print("Label Name:", label['name'])
-    #else:
-    #    print("No labels found.")
-#
-    ## ID de la etiqueta
-    #label_id = 'SENT'
-
-
 
     # Obtener los mensajes
     messages = get_messages(service, "me", "UNREAD")
     if len(messages) == 0:
         print('No hay emails sin leer.')
 
-    print(len(messages))
-
-    #for i in messages:
-    #    msg_id = i['id']
-    #    email = get_message_content(service, 'me', msg_id)
-    #    print(email)
-    #    for i in email:
-    #        print(i, ': ', email[i])
 
     # GENERAR RESPUESTA CON IA
 
-    for mensaje in messages:
-        resp = cat_resp(mensaje['body'])
-        print(resp)
+    for i in messages:
+        msg_id = i['id']
+        email = get_message_content(service, 'me', msg_id)
+        resp = cat_resp(email['body'])
+        email['categorizacion'] = resp['category']
+        email['respuesta'] = resp['response']
+        print(email)
+        print('BODY EMAIL')
+        print(email['body'])
+        print('------------------------------------------------------------------------------------')
+        print('CATEGORIA POR IA')
+        print(email['categorizacion'])
+        print('------------------------------------------------------------------------------------')
+        print('RESPUESTA GENERADA POR IA')
+        print(email['respuesta'])
 
 
 
