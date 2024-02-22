@@ -2,12 +2,14 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
+from ollama import ollama
+from edenAI import EDEN
 import base64
 import json
 import os
 
 # Configurar los permisos necesarios y el alcance
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send']
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.modify']
 
 def list_labels(service, user_id):
     """List all labels in the user's Gmail account."""
@@ -18,23 +20,6 @@ def list_labels(service, user_id):
     except Exception as error:
         print('An error occurred: %s' % error)
 
-#def get_messages(service, user_id, label_ids):
-#    """Get all messages with a specific label."""
-#    try:
-#        response = service.users().messages().list(userId=user_id, labelIds=label_ids).execute()
-#        messages = []
-#        if 'messages' in response:
-#            messages.extend(response['messages'])
-#
-#        while 'nextPageToken' in response:
-#            page_token = response['nextPageToken']
-#            response = service.users().messages().list(userId=user_id, labelIds=label_ids,
-#                                                       pageToken=page_token).execute()
-#            messages.extend(response['messages'])
-#
-#        return messages
-#    except Exception as error:
-#        print('An error occurred: %s' % error)
 
 def get_messages(service, user_id, label_id):
     """Obtener todos los mensajes de la bandeja de entrada."""
@@ -94,7 +79,21 @@ def get_message_content(service, user_id, message_id):
         print('Ocurrió un error al obtener el contenido del mensaje: %s' % error)
 
 
-def create_message(sender, to, subject, message_text, thread_id):
+def cat_resp(body):
+    response = EDEN(body)
+    categories = ['queja/reclamo', 'consultas/solicitud de información', 'agradecimiento/conformidad']
+    out = {'category': "",
+           'response': ""}
+    for category in categories:
+        if category in response:
+            print(category)
+            out['category'] = category
+    text = response.split(";;;;")[-1].strip()
+    out['response'] = text
+    return out
+
+
+def create_message(to, subject, message_text, thread_id):
     message = MIMEText(message_text)
     message['to'] = to
     message['subject'] = subject
@@ -123,32 +122,44 @@ def main():
 
 
     # Obtener la lista de etiquetas
-    labels = list_labels(service, "me")
-    etiquetas = []
-    # Imprimir el ID y el nombre de cada etiqueta
-    if labels:
-        for label in labels:
-            etiquetas.append(label['id'])
-            #print("Label ID:", label['id'])
-            #print("Label Name:", label['name'])
-    else:
-        print("No labels found.")
-
-    # ID de la etiqueta
-    label_id = 'SENT'
+    #labels = list_labels(service, "me")
+    #etiquetas = []
+    ## Imprimir el ID y el nombre de cada etiqueta
+    #if labels:
+    #    for label in labels:
+    #        etiquetas.append(label['id'])
+    #        #print("Label ID:", label['id'])
+    #        #print("Label Name:", label['name'])
+    #else:
+    #    print("No labels found.")
+#
+    ## ID de la etiqueta
+    #label_id = 'SENT'
 
 
 
     # Obtener los mensajes
     messages = get_messages(service, "me", "UNREAD")
+    if len(messages) == 0:
+        print('No hay emails sin leer.')
 
-    for i in messages:
-        msg_id = i['id']
-        email = get_message_content(service, 'me', msg_id)
-        print(email)
-        for i in email:
-            print(i, ': ', email[i])
-        #print(email['body'])
+    print(len(messages))
+
+    #for i in messages:
+    #    msg_id = i['id']
+    #    email = get_message_content(service, 'me', msg_id)
+    #    print(email)
+    #    for i in email:
+    #        print(i, ': ', email[i])
+
+    # GENERAR RESPUESTA CON IA
+
+    for mensaje in messages:
+        resp = cat_resp(mensaje['body'])
+        print(resp)
+
+
+
 
     # Enviar una respuesta a cada mensaje
     #for i in messages:
@@ -156,11 +167,17 @@ def main():
     #    email = get_message_content(service, 'me', msg_id)
     #    #print(i)
     #    try:
-    #        # Compose reply message
     #        respuesta = 'Hola desde Python !'
-    #        reply_message = create_message('me', email['remitente'], 'Probando gmail api python !', respuesta, email['thread_id'])
+    #        reply_message = create_message(email['remitente'], 'Probando gmail api python !', respuesta, email['thread_id'])
     #        service.users().messages().send(userId='me', body=reply_message).execute()  #
     #        print('Reply sent successfully!')
+#
+    #        service.users().messages().modify(
+    #            userId='me',
+    #            id=msg_id,
+    #            body={'removeLabelIds': ['UNREAD']}
+    #        ).execute()
+#
     #    except Exception as e:
     #        print('An error occurred:', e)
 
